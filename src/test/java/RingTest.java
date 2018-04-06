@@ -6,9 +6,9 @@
 
 import com.mycompany.ring_buffer.RingBuffer;
 import static java.lang.Thread.sleep;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -48,7 +48,7 @@ public class RingTest {
 	public void nullTest() {
 		RingBuffer<String> rb = new RingBuffer();
 
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 10; i++) {
 			assertEquals(rb.pop(), null);
 		}
 	}
@@ -56,7 +56,6 @@ public class RingTest {
 	// пробуем писать в список из разных потоков, в надежде что всё будет хорошо
 	@Test
 	public void threadTest() {
-
 		int ring_size = 16;
 
 		RingBuffer<Integer> rb = new RingBuffer(ring_size);
@@ -82,17 +81,57 @@ public class RingTest {
 		th1.start();
 		th2.start();
 
+		// немного подождём пока потоки отработают, возможно тут есть смысл в th1.isAlive(), но так проще
 		try {
-			sleep(1000 * 2);
+			sleep(100);
 		} catch (Exception e) {
 		}
 
 		List result = new ArrayList();
 
-		for (int i = 0; i < ring_size; i++) {
-			result.add(rb.pop());
+		// получаем все данные из списка
+		Object item;
+		while ((item = rb.pop()) != null) {
+			result.add(item);
 		}
 
-		System.out.println(result);
+		// т.к. потоки могли записать их в любом порядке то отсортируем
+		Collections.sort(result);
+
+		assertEquals(result, Arrays.asList(0, 0, 1, 1, 2, 2, 3, 3, 4, 4));
+	}
+
+	// проверяем требование: 1.	Буфер должен работать при переполнении: Выбрасывать исключения
+	@Test
+	public void saveMode() {
+		int ring_size = 5;
+
+		RingBuffer<Integer> rb = new RingBuffer(ring_size);
+
+		rb.setSaveMode(true);
+
+		try {
+			for (int i = 0; i < ring_size + 1; i++) {
+				rb.push(i);
+			}
+			fail("Переполнения списка не произошло");
+		} catch (Exception e) {
+			// все ок
+		}
+
+	}
+
+	// проверяем требование: 1.	Буфер должен работать при переполнении: Перезаписывать
+	@Test
+	public void unSaveMode() {
+		int ring_size = 1;
+
+		RingBuffer<Integer> rb = new RingBuffer(ring_size);
+
+		for (int i = 0; i < ring_size + 1; i++) {
+			rb.push(i);
+		}
+
+		assertEquals(rb.pop(), (Integer) 1);
 	}
 }

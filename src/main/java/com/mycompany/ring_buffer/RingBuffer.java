@@ -5,6 +5,9 @@
  */
 package com.mycompany.ring_buffer;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author polenkov-kp
@@ -16,6 +19,8 @@ public class RingBuffer<Type> {
 	private final Object[] buffer; // собсвтенно хранилище
 	private int buffer_size = 8; // размер хранилища
 	private int buffer_index = 0; // текущий индекс
+	private boolean is_save_mode = false; // кидать ли ексепшн при переполнении
+	private static final Logger LOG = Logger.getLogger(RingBuffer.class.getName());
 
 	public RingBuffer(int buffer_size) {
 		this.buffer_size = buffer_size;
@@ -26,18 +31,32 @@ public class RingBuffer<Type> {
 		this.buffer = new Object[this.buffer_size];
 	}
 
+	public RingBuffer setSaveMode(boolean is) {
+		this.is_save_mode = is;
+		return this;
+	}
+
 	/**
 	добавляет элемент в список
 	@param value
 	 */
-	public synchronized void push(Type value) {
+	public synchronized RingBuffer push(Type value) {
+
+		if (is_save_mode && this.buffer[buffer_index] != null) {
+			throw new RuntimeException("Переполнение списка");
+		}
+
 		this.buffer[buffer_index] = value;
+
+		LOG.log(Level.INFO, "записали " + value + "; " + buffer_index);
+
 		buffer_index++;
-		System.out.println("записали " + value + "; " + buffer_index);
 
 		if (buffer_index >= buffer_size) {
 			buffer_index = 0;
 		}
+
+		return this;
 	}
 
 	/**
@@ -53,7 +72,8 @@ public class RingBuffer<Type> {
 
 		Type value = (Type) this.buffer[buffer_index];
 		this.buffer[buffer_index] = null;
-		System.out.println("получили " + value);
+
+		LOG.log(Level.INFO, "получили " + value);
 
 		return value;
 	}
