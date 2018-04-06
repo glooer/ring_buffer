@@ -30,18 +30,21 @@ public class RingBuffer<Type> {
 	добавляет элемент в список
 	@param value
 	 */
-	public void push(Type value) {
-		buffer_index++;
+	public synchronized void push(Type value) {
 		this.buffer[buffer_index] = value;
-		System.out.println("записали " + value);
-		buffer_index &= (buffer_size - 1);
+		buffer_index++;
+		System.out.println("записали " + value + "; " + buffer_index);
+
+		if (buffer_index >= buffer_size) {
+			buffer_index = 0;
+		}
 	}
 
 	/**
 	извлекает элемент из списка
 	@return
 	 */
-	public Type pop() {
+	public synchronized Type pop() {
 		buffer_index--;
 
 		if (buffer_index < 0) {

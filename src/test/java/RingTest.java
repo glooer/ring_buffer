@@ -6,6 +6,8 @@
 
 import com.mycompany.ring_buffer.RingBuffer;
 import static java.lang.Thread.sleep;
+import java.util.ArrayList;
+import java.util.List;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
@@ -51,4 +53,46 @@ public class RingTest {
 		}
 	}
 
+	// пробуем писать в список из разных потоков, в надежде что всё будет хорошо
+	@Test
+	public void threadTest() {
+
+		int ring_size = 16;
+
+		RingBuffer<Integer> rb = new RingBuffer(ring_size);
+
+		Thread th1 = new Thread() {
+			@Override
+			public void run() {
+				for (int i = 0; i < 5; i++) {
+					rb.push(i);
+				}
+			}
+		};
+
+		Thread th2 = new Thread() {
+			@Override
+			public void run() {
+				for (int i = 0; i < 5; i++) {
+					rb.push(i);
+				}
+			}
+		};
+
+		th1.start();
+		th2.start();
+
+		try {
+			sleep(1000 * 2);
+		} catch (Exception e) {
+		}
+
+		List result = new ArrayList();
+
+		for (int i = 0; i < ring_size; i++) {
+			result.add(rb.pop());
+		}
+
+		System.out.println(result);
+	}
 }
