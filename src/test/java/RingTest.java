@@ -134,4 +134,82 @@ public class RingTest {
 
 		assertEquals(rb.pop(), (Integer) 1);
 	}
+
+	// ещё одна проверка многопоточности, пробуем одновременно читать и писать
+	@Test
+	public void threadTestWithRead() {
+		int ring_size = 100;
+
+		RingBuffer<Integer> rb = new RingBuffer(ring_size);
+
+		Thread writer = new Thread() {
+			@Override
+			public void run() {
+				for (int i = 0; i < 50; i++) {
+					rb.push(i);
+					try {
+						this.sleep(new Random(System.currentTimeMillis()).nextInt(50));
+					} catch (InterruptedException e) {
+					}
+				}
+			}
+		};
+
+		Thread writer_two = new Thread() {
+			@Override
+			public void run() {
+				for (int i = 0; i < 50; i++) {
+					rb.push(i);
+					try {
+						this.sleep(new Random(System.currentTimeMillis()).nextInt(50));
+					} catch (InterruptedException e) {
+					}
+				}
+			}
+		};
+
+		List<Integer> result = new ArrayList();
+
+		Thread reader = new Thread() {
+			@Override
+			public void run() {
+				for (int i = 0; i < 50; i++) {
+					Object item = rb.pop();
+					if (item != null) {
+						result.add((Integer) item);
+					}
+					try {
+						this.sleep(new Random(System.currentTimeMillis()).nextInt(100));
+					} catch (InterruptedException e) {
+					}
+				}
+			}
+		};
+
+		writer.start();
+		writer_two.start();
+		reader.start();
+
+		try {
+			sleep(5 * 1000);
+		} catch (Exception e) {
+		}
+
+		// на случай если что то осталось
+		Object item;
+		while ((item = rb.pop()) != null) {
+			result.add((Integer) item);
+		}
+
+		Collections.sort(result);
+
+		List<Integer> result_expect = new ArrayList();
+
+		for (int i = 0; i < 50; i++) {
+			result_expect.add(i);
+			result_expect.add(i);
+		}
+
+		assertEquals(result, result_expect);
+	}
 }

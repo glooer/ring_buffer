@@ -48,7 +48,7 @@ public class RingBuffer<Type> {
 
 		this.buffer[buffer_index] = value;
 
-		LOG.log(Level.INFO, "записали " + value + "; " + buffer_index);
+		LOG.log(Level.INFO, "записали {0} в ячейку {1}", new Object[]{value, buffer_index});
 
 		buffer_index++;
 
@@ -73,7 +73,7 @@ public class RingBuffer<Type> {
 		Type value = (Type) this.buffer[buffer_index];
 		this.buffer[buffer_index] = null;
 
-		LOG.log(Level.INFO, "получили " + value);
+		LOG.log(Level.INFO, "Получили {0}", value);
 
 		return value;
 	}
