@@ -190,11 +190,12 @@ public class RingTest {
 		writer_two.start();
 		reader.start();
 
-		try {
-			sleep(5 * 1000);
-		} catch (Exception e) {
+		while (writer.isAlive() || writer_two.isAlive()) {
+			try {
+				sleep(10);
+			} catch (InterruptedException e) {
+			}
 		}
-
 		// на случай если что то осталось
 		Object item;
 		while ((item = rb.pop()) != null) {
