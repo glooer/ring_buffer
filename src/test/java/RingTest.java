@@ -7,8 +7,7 @@
 import com.mycompany.ring_buffer.RingBuffer;
 import static java.lang.Thread.sleep;
 import java.util.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
@@ -30,17 +29,17 @@ public class RingTest {
 
 		// заполняем список значениями от 0 до 11, соотсветсвенно элементы списка будут 8, 9, 10, 11, 4, 5, 6, 7
 		for (int i = 0; i < 12; i++) {
-			rb.push(i);
+			rb.offer(i);
 		}
 
 		// вытаскивание будет идти по порядку
 		for (int i = 11; i >= 4; i--) {
-			assertEquals(rb.pop(), (Integer) i);
+			assertEquals(rb.poll(), (Integer) i);
 		}
 
 		// когда мы вытащили все элементы список будет пуст
 		for (int i = 0; i < 100; i++) {
-			assertEquals(rb.pop(), null);
+			assertEquals(rb.poll(), null);
 		}
 	}
 
@@ -49,7 +48,7 @@ public class RingTest {
 		RingBuffer<String> rb = new RingBuffer();
 
 		for (int i = 0; i < 10; i++) {
-			assertEquals(rb.pop(), null);
+			assertEquals(rb.poll(), null);
 		}
 	}
 
@@ -64,7 +63,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				for (int i = 0; i < 5; i++) {
-					rb.push(i);
+					rb.offer(i);
 				}
 			}
 		};
@@ -73,7 +72,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				for (int i = 0; i < 5; i++) {
-					rb.push(i);
+					rb.offer(i);
 				}
 			}
 		};
@@ -91,7 +90,7 @@ public class RingTest {
 
 		// получаем все данные из списка
 		Object item;
-		while ((item = rb.pop()) != null) {
+		while ((item = rb.poll()) != null) {
 			result.add(item);
 		}
 
@@ -108,11 +107,9 @@ public class RingTest {
 
 		RingBuffer<Integer> rb = new RingBuffer(ring_size);
 
-		rb.setSaveMode(true);
-
 		try {
 			for (int i = 0; i < ring_size + 1; i++) {
-				rb.push(i);
+				rb.add(i);
 			}
 			fail("Переполнения списка не произошло");
 		} catch (Exception e) {
@@ -129,10 +126,10 @@ public class RingTest {
 		RingBuffer<Integer> rb = new RingBuffer(ring_size);
 
 		for (int i = 0; i < ring_size + 1; i++) {
-			rb.push(i);
+			rb.offer(i);
 		}
 
-		assertEquals(rb.pop(), (Integer) 1);
+		assertEquals(rb.poll(), (Integer) 1);
 	}
 
 	// ещё одна проверка многопоточности, пробуем одновременно читать и писать
@@ -146,7 +143,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				for (int i = 0; i < 50; i++) {
-					rb.push(i);
+					rb.offer(i);
 					try {
 						this.sleep(new Random(System.currentTimeMillis()).nextInt(50));
 					} catch (InterruptedException e) {
@@ -159,7 +156,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				for (int i = 0; i < 50; i++) {
-					rb.push(i);
+					rb.offer(i);
 					try {
 						this.sleep(new Random(System.currentTimeMillis()).nextInt(50));
 					} catch (InterruptedException e) {
@@ -174,7 +171,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				for (int i = 0; i < 50; i++) {
-					Object item = rb.pop();
+					Object item = rb.poll();
 					if (item != null) {
 						result.add((Integer) item);
 					}
@@ -198,7 +195,7 @@ public class RingTest {
 		}
 		// на случай если что то осталось
 		Object item;
-		while ((item = rb.pop()) != null) {
+		while ((item = rb.poll()) != null) {
 			result.add((Integer) item);
 		}
 
@@ -212,5 +209,210 @@ public class RingTest {
 		}
 
 		assertEquals(result, result_expect);
+	}
+
+	@Test(expected = NoSuchElementException.class)
+	public void removeNoSuchElementException() {
+		new RingBuffer().remove();
+	}
+
+	@Test(expected = NoSuchElementException.class)
+	public void elementNoSuchElementException() {
+		new RingBuffer().element();
+	}
+
+	@Test()
+	public void peek() {
+		RingBuffer<Integer> rb = new RingBuffer(2);
+
+		rb.add(11);
+		rb.add(42);
+
+		assertEquals(rb.peek(), 42);
+		assertEquals(rb.peek(), 42);
+	}
+
+	@Test
+	public void isEmpty() {
+		RingBuffer<Integer> rb = new RingBuffer(2);
+
+		assertTrue(rb.isEmpty());
+
+		rb.add(42);
+
+		assertFalse(rb.isEmpty());
+	}
+
+	@Test
+	public void contains() {
+		RingBuffer<Integer> rb = new RingBuffer(2);
+
+		assertFalse(rb.contains(42));
+
+		rb.add(42);
+
+		assertTrue(rb.contains(42));
+	}
+
+	@Test
+	public void removeByObject() {
+		RingBuffer<Integer> rb = new RingBuffer();
+
+		rb.add(42);
+		rb.add(11);
+		rb.add(32);
+		rb.add(42);
+		assertTrue(rb.remove(42));
+
+		assertFalse(rb.contains(42));
+
+		List result = new ArrayList();
+		Object temp;
+
+		while ((temp = rb.poll()) != null) {
+			result.add(temp);
+		}
+
+		assertEquals(result, Arrays.asList(32, 11));
+	}
+
+	@Test
+	public void noRemove() {
+		RingBuffer<Integer> rb = new RingBuffer();
+
+		rb.add(11);
+		rb.add(32);
+
+		assertFalse(rb.remove(42));
+
+		List result = new ArrayList();
+		Object temp;
+
+		while ((temp = rb.poll()) != null) {
+			result.add(temp);
+		}
+
+		assertEquals(result, Arrays.asList(32, 11));
+
+	}
+
+	@Test
+	public void iterator() {
+		RingBuffer<Integer> rb = new RingBuffer();
+
+		rb.add(1);
+		rb.add(2);
+		rb.add(3);
+
+		List result = new ArrayList();
+
+		for (Iterator iterator = rb.iterator(); iterator.hasNext();) {
+			result.add(iterator.next());
+		}
+
+		assertEquals(result, Arrays.asList(3, 2, 1));
+		assertEquals(rb.poll(), 3);
+		assertEquals(rb.poll(), 2);
+	}
+
+	@Test
+	public void addAll() {
+		RingBuffer<Integer> rb = new RingBuffer();
+
+		rb.add(1);
+		rb.add(2);
+		rb.add(3);
+
+		RingBuffer<Integer> rb_two = new RingBuffer();
+
+		rb.add(4);
+
+		rb_two.addAll(rb);
+
+		List result = new ArrayList();
+
+		for (Iterator iterator = rb_two.iterator(); iterator.hasNext();) {
+			result.add(iterator.next());
+		}
+
+		assertEquals(result, Arrays.asList(1, 2, 3, 4));
+	}
+
+	@Test
+	public void removeAll() {
+		RingBuffer<Integer> rb = new RingBuffer();
+
+		rb.add(1);
+		rb.add(2);
+		rb.add(3);
+		rb.add(4);
+
+		RingBuffer<Integer> rb_two = new RingBuffer();
+
+		rb_two.add(2);
+		rb_two.add(4);
+
+		rb.removeAll(rb_two);
+
+		List result = new ArrayList();
+
+		for (Iterator iterator = rb.iterator(); iterator.hasNext();) {
+			result.add(iterator.next());
+		}
+
+		assertEquals(result, Arrays.asList(3, 1));
+	}
+
+	@Test
+	public void retainAll() {
+		RingBuffer<Integer> rb = new RingBuffer();
+
+		rb.add(1);
+		rb.add(2);
+		rb.add(3);
+		rb.add(4);
+		rb.add(5);
+		rb.add(6);
+
+		RingBuffer<Integer> rb_two = new RingBuffer();
+
+		rb_two.add(2);
+		rb_two.add(4);
+		rb_two.add(5);
+
+		rb.retainAll(rb_two);
+
+		List result = new ArrayList();
+
+		for (Iterator iterator = rb.iterator(); iterator.hasNext();) {
+			result.add(iterator.next());
+		}
+
+		assertEquals(result, Arrays.asList(5, 4, 2));
+	}
+
+	@Test
+	public void containsAll() {
+		RingBuffer<Integer> rb = new RingBuffer();
+
+		rb.add(1);
+		rb.add(2);
+		rb.add(3);
+		rb.add(4);
+		rb.add(5);
+		rb.add(6);
+
+		RingBuffer<Integer> rb_two = new RingBuffer();
+
+		rb_two.add(2);
+		rb_two.add(4);
+		rb_two.add(5);
+
+		assertTrue(rb.containsAll(rb_two));
+
+		rb_two.add(42);
+
+		assertFalse(rb.containsAll(rb_two));
+
 	}
 }
