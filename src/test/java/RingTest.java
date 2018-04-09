@@ -138,14 +138,14 @@ public class RingTest {
 	// ещё одна проверка многопоточности, пробуем одновременно читать и писать
 	@Test
 	public void threadTestWithRead() {
-		int ring_size = 100;
+		int ring_size = 1000;
 
 		RingBuffer<Integer> rb = new RingBuffer(ring_size);
 
 		Thread writer = new Thread() {
 			@Override
 			public void run() {
-				for (int i = 0; i < 50; i++) {
+				for (int i = 0; i < ring_size / 2; i++) {
 					rb.offer(i);
 				}
 			}
@@ -154,7 +154,7 @@ public class RingTest {
 		Thread writer_two = new Thread() {
 			@Override
 			public void run() {
-				for (int i = 0; i < 50; i++) {
+				for (int i = 0; i < ring_size / 2; i++) {
 					rb.offer(i);
 				}
 			}
@@ -165,7 +165,7 @@ public class RingTest {
 		Thread reader = new Thread() {
 			@Override
 			public void run() {
-				for (int i = 0; i < 50; i++) {
+				for (int i = 0; i < ring_size; i++) {
 					Object item = rb.poll();
 					if (item != null) {
 						result.add((Integer) item);
@@ -194,7 +194,7 @@ public class RingTest {
 
 		List<Integer> result_expect = new ArrayList();
 
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < ring_size / 2; i++) {
 			result_expect.add(i);
 			result_expect.add(i);
 		}
@@ -472,6 +472,15 @@ public class RingTest {
 		RingBuffer<Integer> rb = new RingBuffer(2);
 
 		rb.add(null);
+	}
+
+	// пока не знаю как реализовать проверку типов
+	@Test(expected = ClassCastException.class)
+	@Ignore
+	public void addCheckTypes() {
+		RingBuffer<Integer> rb = new RingBuffer(2);
+
+		rb.add("42");
 	}
 
 }

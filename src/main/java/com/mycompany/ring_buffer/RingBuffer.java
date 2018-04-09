@@ -6,6 +6,7 @@
 package com.mycompany.ring_buffer;
 
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,6 +17,8 @@ import java.util.logging.Logger;
  * @see https://docs.oracle.com/javase/7/docs/api/java/util/Queue.html
  */
 public class RingBuffer<Type> implements Queue {
+
+	private static ReentrantLock locker = new ReentrantLock();
 
 	public RingBuffer setSaveMode(boolean is) {
 		this.is_save_mode = is;
@@ -167,14 +170,19 @@ public class RingBuffer<Type> implements Queue {
 	@param value
 	 * @return
 	 */
-	private synchronized RingBuffer push(Object value) {
-		this.buffer[buffer_index] = value;
+	private RingBuffer push(Object value) {
+		locker.lock();
+		try {
+			this.buffer[buffer_index] = value;
 
 //		LOG.log(Level.INFO, "записали {0} в ячейку {1}", new Object[]{value, buffer_index});
-		buffer_index++;
+			buffer_index++;
 
-		if (buffer_index >= buffer_size) {
-			buffer_index = 0;
+			if (buffer_index >= buffer_size) {
+				buffer_index = 0;
+			}
+		} finally {
+			locker.unlock();
 		}
 
 		return this;
@@ -202,16 +210,23 @@ public class RingBuffer<Type> implements Queue {
 	извлекает элемент из списка
 	@return
 	 */
-	private synchronized Type pop(boolean is_delete) {
-		int i = buffer_index;
+	private Type pop(boolean is_delete) {
+		locker.lock();
 
-		while (this.buffer[i] == null && indexNext(i, buffer_size) != buffer_index) {
-			i = indexNext(i, buffer_size);
-		}
+		Type value;
+		try {
+			int i = buffer_index;
 
-		Type value = (Type) this.buffer[i];
-		if (is_delete) {
-			this.buffer[i] = null;
+			while (this.buffer[i] == null && indexNext(i, buffer_size) != buffer_index) {
+				i = indexNext(i, buffer_size);
+			}
+
+			value = (Type) this.buffer[i];
+			if (is_delete) {
+				this.buffer[i] = null;
+			}
+		} finally {
+			locker.unlock();
 		}
 
 //		LOG.log(Level.INFO, "Получили {0}", value);
