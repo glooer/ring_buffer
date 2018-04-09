@@ -24,17 +24,23 @@ public class RingBuffer<Type> implements Queue {
 
 	@Override
 	public boolean add(Object value) {
+		if (value == null) {
+			throw new NullPointerException();
+		}
+
 		if (is_save_mode && this.buffer[buffer_index] != null) {
 			throw new IllegalStateException("Переполнение списка");
 		}
 
-		return offer(value);
+		push(value);
+
+		return true;
 	}
 
 	@Override
 	public boolean offer(Object value) {
 		try {
-			this.push(value);
+			this.add(value);
 		} catch (Exception e) {
 			return false;
 		}
@@ -220,7 +226,7 @@ public class RingBuffer<Type> implements Queue {
 		}
 
 		boolean is_remove = false;
-		RingBuffer temp_rb = new RingBuffer(this.buffer_size);
+		RingBuffer temp_rb = new RingBuffer(this.buffer_size + 1);
 
 		Object temp_value;
 
