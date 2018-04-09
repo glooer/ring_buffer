@@ -17,9 +17,14 @@ import java.util.logging.Logger;
  */
 public class RingBuffer<Type> implements Queue {
 
+	public RingBuffer setSaveMode(boolean is) {
+		this.is_save_mode = is;
+		return this;
+	}
+
 	@Override
 	public boolean add(Object value) {
-		if (this.buffer[buffer_index] != null) {
+		if (is_save_mode && this.buffer[buffer_index] != null) {
 			throw new IllegalStateException("Переполнение списка");
 		}
 
@@ -66,8 +71,7 @@ public class RingBuffer<Type> implements Queue {
 
 	@Override
 	public Object peek() {
-		int last_index = (buffer_index - 1 >= 0 ? buffer_index : buffer_size) - 1;
-		Object value = buffer[last_index];
+		Object value = pop(false);
 
 		return value;
 	}
@@ -139,8 +143,9 @@ public class RingBuffer<Type> implements Queue {
 	// ага, final, мыж объекты внутри меняем а не саму ссылку
 	private final Object[] buffer; // собсвтенно хранилище
 	private int buffer_size = 8; // размер хранилища
-	private int buffer_index = 0; // текущий индекс
+	public int buffer_index = 0; // текущий индекс
 	private static final Logger LOG = Logger.getLogger(RingBuffer.class.getName());
+	private boolean is_save_mode = false; // кидать ли ексепшн при переполнении
 
 	public RingBuffer(int buffer_size) {
 		this.buffer_size = buffer_size;
@@ -159,8 +164,7 @@ public class RingBuffer<Type> implements Queue {
 	private synchronized RingBuffer push(Object value) {
 		this.buffer[buffer_index] = value;
 
-		LOG.log(Level.INFO, "записали {0} в ячейку {1}", new Object[]{value, buffer_index});
-
+//		LOG.log(Level.INFO, "записали {0} в ячейку {1}", new Object[]{value, buffer_index});
 		buffer_index++;
 
 		if (buffer_index >= buffer_size) {
@@ -171,21 +175,40 @@ public class RingBuffer<Type> implements Queue {
 	}
 
 	/**
+	возвращает следующий индекс списка
+	@param i
+	@param size
+	@return
+	 */
+	private int indexNext(int i, int size) {
+		return i + 1 < size ? i + 1 : 0;
+	}
+
+	/**
 	извлекает элемент из списка
 	@return
 	 */
-	private synchronized Type pop() {
-		buffer_index--;
+	private Type pop() {
+		return pop(true);
+	}
 
-		if (buffer_index < 0) {
-			buffer_index = buffer_size - 1;
+	/**
+	извлекает элемент из списка
+	@return
+	 */
+	private synchronized Type pop(boolean is_delete) {
+		int i = buffer_index;
+
+		while (this.buffer[i] == null && indexNext(i, buffer_size) != buffer_index) {
+			i = indexNext(i, buffer_size);
 		}
 
-		Type value = (Type) this.buffer[buffer_index];
-		this.buffer[buffer_index] = null;
+		Type value = (Type) this.buffer[i];
+		if (is_delete) {
+			this.buffer[i] = null;
+		}
 
-		LOG.log(Level.INFO, "Получили {0}", value);
-
+//		LOG.log(Level.INFO, "Получили {0}", value);
 		return value;
 	}
 
@@ -197,26 +220,21 @@ public class RingBuffer<Type> implements Queue {
 		}
 
 		boolean is_remove = false;
-		Object[] temp_list = new Object[this.buffer_size];
-		int iterator = 0;
+		RingBuffer temp_rb = new RingBuffer(this.buffer_size);
 
-		Object temp_value = poll();
+		Object temp_value;
 
-		while (temp_value != null) {
-			System.out.println(temp_value);
+		while ((temp_value = this.poll()) != null) {
 			if (value.equals(temp_value)) {
 				is_remove = true;
-				temp_value = pop();
 				continue;
 			}
 
-			temp_list[iterator++] = temp_value;
-
-			temp_value = pop();
+			temp_rb.add(temp_value);
 		}
 
-		while ((--iterator) >= 0) {
-			this.add(temp_list[iterator]);
+		while ((temp_value = temp_rb.poll()) != null) {
+			this.add(temp_value);
 		}
 
 		return is_remove;
