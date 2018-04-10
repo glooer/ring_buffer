@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  */
 public class RingBuffer<Type> implements Queue {
 
-	private static ReentrantLock locker = new ReentrantLock();
+	private ReentrantLock locker;
 
 	/**
 	устанавливает режим вывода ошибок в случае переполнения буфера, true - валится исключение, false - данные перезаписываются
@@ -165,10 +165,12 @@ public class RingBuffer<Type> implements Queue {
 	public RingBuffer(int buffer_size) {
 		this.buffer_size = buffer_size;
 		this.buffer = new Object[this.buffer_size];
+		this.locker = new ReentrantLock();
 	}
 
 	public RingBuffer() {
 		this.buffer = new Object[this.buffer_size];
+		this.locker = new ReentrantLock();
 	}
 
 	/**

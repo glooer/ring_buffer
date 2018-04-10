@@ -138,7 +138,7 @@ public class RingTest {
 	// ещё одна проверка многопоточности, пробуем одновременно читать и писать
 	@Test
 	public void threadTestWithRead() {
-		int ring_size = 1_000;
+		int ring_size = 10_000;
 
 		RingBuffer<Integer> rb = new RingBuffer(ring_size);
 
@@ -146,7 +146,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				for (int i = 0; i < ring_size / 2; i++) {
-					rb.offer(i);
+					rb.add(i);
 				}
 			}
 		};
@@ -155,7 +155,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				for (int i = 0; i < ring_size / 2; i++) {
-					rb.offer(i);
+					rb.add(i);
 				}
 			}
 		};
@@ -178,7 +178,7 @@ public class RingTest {
 		writer_two.start();
 		reader.start();
 
-		while (writer.isAlive() || writer_two.isAlive()) {
+		while (writer.isAlive() || writer_two.isAlive() || reader.isAlive()) {
 			try {
 				sleep(10);
 			} catch (InterruptedException e) {
