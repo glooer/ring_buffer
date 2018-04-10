@@ -138,7 +138,7 @@ public class RingTest {
 	// ещё одна проверка многопоточности, пробуем одновременно читать и писать
 	@Test
 	public void threadTestWithRead() {
-		int ring_size = 1000;
+		int ring_size = 1_000;
 
 		RingBuffer<Integer> rb = new RingBuffer(ring_size);
 
@@ -331,8 +331,7 @@ public class RingTest {
 
 	@Test
 	public void removeAll() {
-		// FIXME: если четное количество то всё плохо, смотри тест ниже
-		RingBuffer<Integer> rb = new RingBuffer(7);
+		RingBuffer<Integer> rb = new RingBuffer();
 
 		rb.add(1);
 		rb.add(2);
@@ -361,7 +360,7 @@ public class RingTest {
 
 		rb.add(1);
 		rb.add(2);
-		rb.add(3); // FIXME: если элементов будет четное количество, то почему то список разворачивается (подсказка: так получается что элементы находятся на разных концах физического массива, скорее всего косяк где то там)
+		rb.add(3);
 		rb.add(4);
 		rb.add(5);
 
@@ -474,7 +473,7 @@ public class RingTest {
 		rb.add(null);
 	}
 
-	// пока не знаю как реализовать проверку типов
+//	пока не знаю как реализовать проверку типов, возможно в текущей реализации никак..
 	@Test(expected = ClassCastException.class)
 	@Ignore
 	public void addCheckTypes() {

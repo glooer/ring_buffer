@@ -15,8 +15,8 @@ public class RingBufferIterator implements Iterator {
 
 	private RingBuffer rb;
 
-	public RingBufferIterator(RingBuffer rb) {
-		this.rb = rb;
+	public RingBufferIterator(RingBuffer rb) throws CloneNotSupportedException {
+		this.rb = (RingBuffer) rb.clone();
 	}
 
 	@Override

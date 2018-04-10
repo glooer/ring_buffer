@@ -112,14 +112,17 @@ public class RingBuffer<Type> implements Queue {
 
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
-		RingBuffer<Type> clone = new RingBuffer();
+		RingBuffer<Type> clone = new RingBuffer(this.buffer_size);
+		RingBuffer<Type> clone_test = new RingBuffer(this.buffer_size);
 
-		for (Object object : this.toArray()) {
-			if (object == null) {
-				continue;
-			}
+		Object temp;
+		while ((temp = this.poll()) != null) {
+			clone.add(temp);
+			clone_test.add(temp);
+		}
 
-			clone.add(object);
+		while ((temp = clone_test.poll()) != null) {
+			this.add(temp);
 		}
 
 		return clone;
@@ -127,15 +130,13 @@ public class RingBuffer<Type> implements Queue {
 
 	@Override
 	public Iterator iterator() {
-
-		RingBuffer clone = this;
 		try {
-			clone = (RingBuffer) this.clone();
+			return new RingBufferIterator(this);
 		} catch (CloneNotSupportedException ex) {
 			Logger.getLogger(RingBuffer.class.getName()).log(Level.SEVERE, null, ex);
 		}
 
-		return new RingBufferIterator(clone);
+		return null;
 	}
 
 	@Override
