@@ -20,6 +20,11 @@ public class RingBuffer<Type> implements Queue {
 
 	private static ReentrantLock locker = new ReentrantLock();
 
+	/**
+	устанавливает режим вывода ошибок в случае переполнения буфера, true - валится исключение, false - данные перезаписываются
+	@param is
+	@return
+	 */
 	public RingBuffer setSaveMode(boolean is) {
 		this.is_save_mode = is;
 		return this;
